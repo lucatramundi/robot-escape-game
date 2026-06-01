@@ -698,7 +698,7 @@
             isJumping: false,
             isDucking: false,
             speed: 5,
-            jumpPower: 3,
+            jumpPower: 7,
             gravity: 0.5,
             onGround: false,
             coins: 0
@@ -1020,8 +1020,7 @@
             levelData.enemies.forEach(enemy => {
                 ctx.fillStyle = '#E53935';
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(enemy.x + 4, enemy.y + 4, 4, 4);
+                ctx.fillStyle = '#fff';\n                ctx.fillRect(enemy.x + 4, enemy.y + 4, 4, 4);
                 ctx.fillRect(enemy.x + enemy.width - 8, enemy.y + 4, 4, 4);
                 ctx.fillStyle = '#000';
                 ctx.fillRect(enemy.x + 5, enemy.y + 5, 2, 2);
