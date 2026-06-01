@@ -302,7 +302,6 @@
             transform: scale(1.05);
         }
 
-        /* Shop Modal */
         #shopModal {
             display: none;
             position: fixed;
@@ -618,13 +617,11 @@
         }
 
         function openShop() {
-            console.log('Opening shop');
             document.getElementById('shopModal').style.display = 'flex';
             renderShop();
         }
 
         function closeShop() {
-            console.log('Closing shop');
             document.getElementById('shopModal').style.display = 'none';
         }
 
@@ -713,7 +710,6 @@
             const spikes = [];
 
             if (levelNum === 21) {
-                // Boss level
                 platforms.push({ x: 0, y: baseHeight, width: canvas.width, height: 40 });
                 coins.push({ x: canvas.width / 2, y: baseHeight - 80 });
                 return { platforms, coins, enemies, spikes, isBoss: true };
@@ -841,13 +837,11 @@
         function updateBoss() {
             if (boss.isDefeated) return;
 
-            // Boss movement
             boss.x += boss.speed * boss.direction;
             if (boss.x < 50 || boss.x + boss.width > canvas.width - 50) {
                 boss.direction *= -1;
             }
 
-            // Boss shooting
             boss.shootTimer++;
             if (boss.shootTimer > boss.shootInterval) {
                 boss.shootTimer = 0;
@@ -861,12 +855,10 @@
                 });
             }
 
-            // Update projectiles
             boss.projectiles = boss.projectiles.filter(proj => {
                 proj.x += proj.velocityX;
                 proj.y += proj.velocityY;
 
-                // Check collision with player
                 if (
                     proj.x < player.x + player.width &&
                     proj.x + proj.width > player.x &&
@@ -901,7 +893,6 @@
             player.y += player.velocityY;
             player.onGround = false;
 
-            // Platform collisions
             levelData.platforms.forEach(platform => {
                 if (
                     player.velocityY >= 0 &&
@@ -918,7 +909,6 @@
                 }
             });
 
-            // Coin collection
             levelData.coins = levelData.coins.filter(coin => {
                 const dist = Math.hypot(player.x + player.width / 2 - coin.x, player.y + player.height / 2 - coin.y);
                 if (dist < 20) {
@@ -929,7 +919,6 @@
                 return true;
             });
 
-            // Enemy collision
             levelData.enemies.forEach(enemy => {
                 if (
                     player.x < enemy.x + enemy.width &&
@@ -941,7 +930,6 @@
                 }
             });
 
-            // Spike collision
             levelData.spikes.forEach(spike => {
                 if (
                     player.x < spike.x + spike.width &&
@@ -953,7 +941,6 @@
                 }
             });
 
-            // Boss collision
             if (isBossBattle && !boss.isDefeated) {
                 if (
                     player.x < boss.x + boss.width &&
@@ -982,7 +969,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Platforms
             levelData.platforms.forEach(platform => {
                 ctx.fillStyle = platform.isGoal ? '#FFD700' : '#4CAF50';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
@@ -994,7 +980,6 @@
                 }
             });
 
-            // Coins
             levelData.coins.forEach(coin => {
                 ctx.fillStyle = '#FFD700';
                 ctx.beginPath();
@@ -1005,7 +990,6 @@
                 ctx.stroke();
             });
 
-            // Spikes
             levelData.spikes.forEach(spike => {
                 ctx.fillStyle = '#FF6B6B';
                 ctx.beginPath();
@@ -1016,7 +1000,6 @@
                 ctx.fill();
             });
 
-            // Enemies
             levelData.enemies.forEach(enemy => {
                 ctx.fillStyle = '#E53935';
                 ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -1028,11 +1011,9 @@
                 ctx.fillRect(enemy.x + enemy.width - 7, enemy.y + 5, 2, 2);
             });
 
-            // Draw boss
             if (isBossBattle) {
                 drawBoss();
 
-                // Draw boss projectiles
                 boss.projectiles.forEach(proj => {
                     ctx.fillStyle = '#FF0000';
                     ctx.beginPath();
@@ -1040,7 +1021,6 @@
                     ctx.fill();
                 });
 
-                // Draw boss health bar
                 const healthBarWidth = 200;
                 const healthBarHeight = 20;
                 ctx.fillStyle = '#666';
@@ -1065,27 +1045,22 @@
             const w = boss.width;
             const h = boss.height;
 
-            // Body
             ctx.fillStyle = '#8B0000';
             ctx.fillRect(x, y, w, h);
 
-            // Head
             ctx.fillStyle = '#A52A2A';
             ctx.fillRect(x + 10, y - 15, w - 20, 15);
 
-            // Eyes
             ctx.fillStyle = '#FFFF00';
             ctx.fillRect(x + 15, y - 10, 6, 6);
             ctx.fillRect(x + w - 21, y - 10, 6, 6);
 
-            // Mouth (evil grin)
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(x + w / 2, y - 3, 8, 0, Math.PI);
             ctx.stroke();
 
-            // Crown
             ctx.fillStyle = '#FFD700';
             ctx.beginPath();
             ctx.moveTo(x + 12, y - 18);
@@ -1096,7 +1071,6 @@
             ctx.closePath();
             ctx.fill();
 
-            // Shooting indicator
             if (boss.shootTimer > boss.shootInterval - 10) {
                 ctx.fillStyle = '#FF6B6B';
                 ctx.beginPath();
@@ -1228,7 +1202,6 @@
                         victoryAnimationPlaying = true;
                         document.getElementById('victoryText').style.display = 'block';
                         
-                        // Shoot boss off screen
                         let bossY = boss.y;
                         let shootInterval = setInterval(() => {
                             bossY -= 15;
