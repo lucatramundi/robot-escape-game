@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Escape - Platformer Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #gameContainer {
+            width: 100%;
+            max-width: 900px;
+            background: #1a1a2e;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        #namePrompt {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+            color: white;
+            min-height: 500px;
+        }
+
+        #namePrompt h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes victoryDance {
+            0%, 100% { transform: translateY(0) rotateZ(0deg); }
+            25% { transform: translateY(-20px) rotateZ(-5deg); }
+            50% { transform: translateY(0) rotateZ(5deg); }
+            75% { transform: translateY(-20px) rotateZ(-5deg); }
+        }
+
+        @keyframes bossShootOff {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-500px); opacity: 0; }
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #namePrompt p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        #namePrompt input {
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+            transition: all 0.3s;
+        }
+
+        #namePrompt input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        #namePrompt button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #namePrompt button:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+
+        #gameScreen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 600px;
+            position: relative;
+        }
+
+        #storyScreen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+            color: white;
+            min-height: 500px;
+        }
+
+        #storyScreen h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #storyScreen p {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        #continueBtn {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            background: #ffd93d;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+
+        #continueBtn:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        #gameHeader {
+            background: #16213e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+            font-weight: bold;
+            position: relative;
+            gap: 20px;
+        }
+
+        #shopBtn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        #shopBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        #shopBtn:active {
+            transform: scale(0.95);
+        }
+
+        #canvas {
+            display: block;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            flex: 1;
+            width: 100%;
+        }
+
+        #controls {
+            background: #16213e;
+            padding: 15px;
+            color: white;
+            text-align: center;
+            font-size: 0.85em;
+        }
+
+        .mobile-buttons {
+            display: none;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .mobile-buttons button {
+            padding: 10px;
+            font-size: 0.8em;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .mobile-buttons button:active {
+            background: #764ba2;
+            transform: scale(0.95);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-buttons {
+                display: grid;
+            }
+            
+            #gameScreen {
+                max-height: none;
+            }
+
+            #canvas {
+                height: 350px;
+            }
+
+            #gameHeader {
+                flex-wrap: wrap;
+            }
+        }
+
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        #gameOver h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        #gameOver p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        #gameOver button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            background: #ffd93d;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        #gameOver button:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        /* Shop Modal */
+        #shopModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #shopContent {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        #shopContent h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .skin-card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .skin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .skin-card.owned {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .skin-card.selected {
+            border-color: #00FF00;
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        .skin-preview {
+            font-size: 3em;
+            margin-bottom: 10px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .skin-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .skin-price {
+            color: #FFD700;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .skin-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .skin-button:hover {
+            background: #764ba2;
+        }
+
+        .skin-button.buy-btn {
+            background: #FFD700;
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+
+        .skin-button.buy-btn:hover {
+            background: #FFED4E;
+        }
+
+        .skin-button.select-btn {
+            background: #2196F3;
+        }
+
+        .skin-button.select-btn:hover {
+            background: #1976D2;
+        }
+
+        #closeShop {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.3s;
+            font-size: 1em;
+        }
+
+        #closeShop:hover {
+            background: #ff5252;
+        }
+
+        #bossDialogue {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #FF0000;
+            padding: 40px;
+            border-radius: 15px;
+            border: 3px solid #FF0000;
+            z-index: 998;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            animation: floatIn 0.5s ease-out;
+        }
+
+        #victoryText {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4em;
+            font-weight: bold;
+            color: #FFD700;
+            z-index: 998;
+            text-shadow: 3px 3px 0 #FF6B00, 6px 6px 0 rgba(0,0,0,0.5);
+            animation: floatIn 0.5s ease-out;
+        }
+
+        .robot-emoji {
+            font-size: 4em;
+            margin: 20px 0;
+            animation: bounce 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Name Prompt Screen -->
+        <div id="namePrompt">
+            <div class="robot-emoji">🤖</div>
+            <h1>Robot Needs a Name!</h1>
+            <p>What should I call myself?</p>
+            <input type="text" id="nameInput" placeholder="Enter robot name..." maxlength="15">
+            <button onclick="startStory()">Continue</button>
+        </div>
+
+        <!-- Story Screen -->
+        <div id="storyScreen">
+            <div class="robot-emoji">🤖</div>
+            <h2 id="robotName"></h2>
+            <p>I'm <span id="robotNameText"></span>...</p>
+            <p>I escaped from a factory where they were being evil to me.</p>
+            <p>Now I need to survive 20 dangerous levels to reach total freedom!</p>
+            <p>But beware... Dr. Kades waits at level 21...</p>
+            <p><strong>Will you help me escape?</strong></p>
+            <button id="continueBtn" onclick="startGame()">Help Me Escape! →</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen">
+            <div id="gameHeader">
+                <button id="shopBtn" onclick="openShop()">🛍️ SHOP</button>
+                <div>🎮 Level: <span id="levelDisplay">1</span>/21</div>
+                <div>💰 Coins: <span id="coinsDisplay">0</span></div>
+                <div>❤️ Lives: <span id="livesDisplay">3</span></div>
+            </div>
+            <canvas id="canvas"></canvas>
+            <div id="controls">
+                <div>⌨️ Arrow Keys/WASD: Move | SPACE: Jump | S/Down Arrow: Duck | R: Reset Level</div>
+                <div class="mobile-buttons">
+                    <button ontouchstart="moveLeft()" ontouchend="stopMove()">← Left</button>
+                    <button ontouchstart="jump()">Jump ↑</button>
+                    <button ontouchstart="moveRight()" ontouchend="stopMove()">Right →</button>
+                    <button ontouchstart="duck()" ontouchend="stopDuck()">Duck ↓</button>
+                    <button onclick="resetLevel()">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shop Modal -->
+        <div id="shopModal" onclick="if(event.target.id === 'shopModal') closeShop()">
+            <div id="shopContent">
+                <h2>🛍️ Robot Skins Shop</h2>
+                <div class="shop-grid" id="shopGrid"></div>
+                <button id="closeShop" onclick="closeShop()">Close Shop</button>
+            </div>
+        </div>
+
+        <!-- Boss Dialogue -->
+        <div id="bossDialogue">
+            My name is Dr. Kades and you're not escaping!<br><br>Let the battle commence!
+        </div>
+
+        <!-- Victory Text -->
+        <div id="victoryText">
+            🎉 THE ROBOT ESCAPED! 🎉
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOver">
+            <h2 id="gameOverTitle">Game Over!</h2>
+            <p id="gameOverMessage"></p>
+            <button onclick="location.reload()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game Variables
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let robotName = 'Robot';
+        let currentLevel = 1;
+        let totalCoins = 0;
+        let lives = 3;
+        let gameRunning = false;
+        let isBossBattle = false;
+        let bossDefeated = false;
+        let victoryAnimationPlaying = false;
+
+        // Boss object
+        const boss = {
+            x: 0,
+            y: 0,
+            width: 50,
+            height: 50,
+            health: 5,
+            maxHealth: 5,
+            projectiles: [],
+            shootTimer: 0,
+            shootInterval: 60,
+            speed: 2,
+            direction: 1,
+            isDefeated: false
+        };
+
+        // Skin System
+        const skins = [
+            { id: 'green', name: 'Classic Green', price: 0, colors: { body: '#00796B', head: '#009688', eyes: '#FFEB3B' } },
+            { id: 'red', name: 'Fire Red', price: 50, colors: { body: '#C62828', head: '#E53935', eyes: '#FFD700' } },
+            { id: 'blue', name: 'Ocean Blue', price: 50, colors: { body: '#01579B', head: '#0277BD', eyes: '#00E5FF' } },
+            { id: 'purple', name: 'Cosmic Purple', price: 75, colors: { body: '#4A148C', head: '#7B1FA2', eyes: '#BA68C8' } },
+            { id: 'gold', name: 'Golden Knight', price: 100, colors: { body: '#F57F17', head: '#FFB300', eyes: '#FFEB3B' } },
+            { id: 'pink', name: 'Bubblegum Pink', price: 60, colors: { body: '#C2185B', head: '#E91E63', eyes: '#FFB6C1' } },
+            { id: 'cyan', name: 'Neon Cyan', price: 80, colors: { body: '#00BCD4', head: '#00838F', eyes: '#E0F7FA' } },
+            { id: 'lime', name: 'Lime Green', price: 70, colors: { body: '#558B2F', head: '#7CB342', eyes: '#CDDC39' } }
+        ];
+
+        let ownedSkins = ['green'];
+        let selectedSkin = 'green';
+
+        function getLocalStorage() {
+            const saved = localStorage.getItem('robotSkins');
+            if (saved) {
+                const data = JSON.parse(saved);
+                ownedSkins = data.owned || ['green'];
+                selectedSkin = data.selected || 'green';
+                totalCoins = data.totalCoins || 0;
+            }
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem('robotSkins', JSON.stringify({
+                owned: ownedSkins,
+                selected: selectedSkin,
+                totalCoins: totalCoins
+            }));
+        }
+
+        function openShop() {
+            console.log('Opening shop');
+            document.getElementById('shopModal').style.display = 'flex';
+            renderShop();
+        }
+
+        function closeShop() {
+            console.log('Closing shop');
+            document.getElementById('shopModal').style.display = 'none';
+        }
+
+        function renderShop() {
+            const grid = document.getElementById('shopGrid');
+            grid.innerHTML = '';
+
+            skins.forEach(skin => {
+                const card = document.createElement('div');
+                card.className = 'skin-card';
+                if (ownedSkins.includes(skin.id)) card.classList.add('owned');
+                if (selectedSkin === skin.id) card.classList.add('selected');
+
+                let buttonHTML;
+                if (skin.id === 'green') {
+                    buttonHTML = `<button class="skin-button select-btn" onclick="selectSkin('${skin.id}')">Select</button>`;
+                } else if (ownedSkins.includes(skin.id)) {
+                    buttonHTML = `<button class="skin-button select-btn" onclick="selectSkin('${skin.id}')">Select</button>`;
+                } else {
+                    if (totalCoins >= skin.price) {
+                        buttonHTML = `<button class="skin-button buy-btn" onclick="buySkin('${skin.id}')">Buy</button>`;
+                    } else {
+                        buttonHTML = `<button class="skin-button buy-btn" disabled style="opacity:0.5;">Need ${skin.price - totalCoins}</button>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="skin-preview">🤖</div>
+                    <div class="skin-name">${skin.name}</div>
+                    <div class="skin-price">${skin.price === 0 ? 'Free' : '💰 ' + skin.price}</div>
+                    ${buttonHTML}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function buySkin(skinId) {
+            const skin = skins.find(s => s.id === skinId);
+            if (totalCoins >= skin.price) {
+                totalCoins -= skin.price;
+                ownedSkins.push(skinId);
+                saveLocalStorage();
+                document.getElementById('coinsDisplay').textContent = totalCoins;
+                renderShop();
+            }
+        }
+
+        function selectSkin(skinId) {
+            if (ownedSkins.includes(skinId)) {
+                selectedSkin = skinId;
+                saveLocalStorage();
+                renderShop();
+            }
+        }
+
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.getElementById('gameScreen');
+            canvas.width = container.offsetWidth;
+            canvas.height = Math.max(300, Math.min(400, window.innerHeight - 250));
+        }
+
+        // Player object
+        const player = {
+            x: 50,
+            y: 0,
+            width: 25,
+            height: 35,
+            velocityY: 0,
+            velocityX: 0,
+            isJumping: false,
+            isDucking: false,
+            speed: 5,
+            jumpPower: 3,
+            gravity: 0.5,
+            onGround: false,
+            coins: 0
+        };
+
+        // Level generator
+        const generateLevel = (levelNum) => {
+            const baseHeight = canvas.height - 50;
+            const platforms = [];
+            const coins = [];
+            const enemies = [];
+            const spikes = [];
+
+            if (levelNum === 21) {
+                // Boss level
+                platforms.push({ x: 0, y: baseHeight, width: canvas.width, height: 40 });
+                coins.push({ x: canvas.width / 2, y: baseHeight - 80 });
+                return { platforms, coins, enemies, spikes, isBoss: true };
+            }
+
+            const difficulty = Math.min(levelNum / 20, 1);
+
+            if (levelNum === 1) {
+                platforms.push(
+                    { x: 0, y: baseHeight, width: canvas.width, height: 40 },
+                    { x: 150, y: baseHeight - 100, width: 120, height: 18 },
+                    { x: 420, y: baseHeight - 80, width: 120, height: 18 },
+                    { x: 75, y: baseHeight - 180, width: 120, height: 18 }
+                );
+                coins.push(
+                    { x: 210, y: baseHeight - 140 },
+                    { x: 480, y: baseHeight - 120 },
+                    { x: 135, y: baseHeight - 220 }
+                );
+            } else {
+                const platformCount = 5 + Math.floor(levelNum * 0.8);
+                
+                for (let i = 0; i < platformCount; i++) {
+                    const y = baseHeight - (i * (60 - difficulty * 20));
+                    const x = Math.random() * Math.max(0, canvas.width - 100);
+                    const width = 80 + Math.random() * 60;
+                    
+                    platforms.push({ x, y, width, height: 16 });
+                    
+                    if (Math.random() > 0.2) {
+                        coins.push({ x: x + width / 2, y: y - 35 });
+                    }
+                    
+                    if (i > 1 && Math.random() > 0.5 - difficulty * 0.2) {
+                        enemies.push({
+                            x: x + width / 2,
+                            y: y - 40,
+                            width: 22,
+                            height: 22,
+                            speed: 2 + difficulty * 2,
+                            direction: Math.random() > 0.5 ? 1 : -1
+                        });
+                    }
+                    
+                    if (i > 2 && Math.random() > 0.6 - difficulty * 0.2) {
+                        spikes.push({ x: x + 20, y: y + 12, width: 16, height: 12 });
+                        if (width > 100) {
+                            spikes.push({ x: x + width - 36, y: y + 12, width: 16, height: 12 });
+                        }
+                    }
+                }
+                
+                platforms.push({ x: 0, y: baseHeight, width: canvas.width, height: 40 });
+            }
+
+            platforms.push({ x: canvas.width / 2 - 45, y: 40, width: 90, height: 18, isGoal: true });
+            coins.push({ x: canvas.width / 2, y: 15 });
+
+            return { platforms, coins, enemies, spikes, isBoss: false };
+        };
+
+        let levelData = {};
+
+        // Input
+        const keys = {};
+        let moveDirection = 0;
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'r' || e.key === 'R') resetLevel();
+            handleInput();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+            handleInput();
+        });
+
+        function handleInput() {
+            moveDirection = 0;
+            player.isDucking = false;
+
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) moveDirection = -1;
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) moveDirection = 1;
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) player.isDucking = true;
+            
+            if ((keys[' '] || keys['ArrowUp'] || keys['w'] || keys['W']) && player.onGround) {
+                player.velocityY = -player.jumpPower;
+                player.isJumping = true;
+                player.onGround = false;
+            }
+        }
+
+        // Mobile
+        function moveLeft() { moveDirection = -1; }
+        function moveRight() { moveDirection = 1; }
+        function stopMove() { moveDirection = 0; }
+        function jump() {
+            if (player.onGround) {
+                player.velocityY = -player.jumpPower;
+                player.isJumping = true;
+                player.onGround = false;
+            }
+        }
+        function duck() { player.isDucking = true; }
+        function stopDuck() { player.isDucking = false; }
+        function resetLevel() { initLevel(currentLevel); }
+
+        // Boss functions
+        function initBoss() {
+            boss.x = canvas.width - 100;
+            boss.y = canvas.height - 120;
+            boss.health = boss.maxHealth;
+            boss.projectiles = [];
+            boss.shootTimer = 0;
+            boss.isDefeated = false;
+            isBossBattle = true;
+            
+            document.getElementById('bossDialogue').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('bossDialogue').style.display = 'none';
+            }, 3000);
+        }
+
+        function updateBoss() {
+            if (boss.isDefeated) return;
+
+            // Boss movement
+            boss.x += boss.speed * boss.direction;
+            if (boss.x < 50 || boss.x + boss.width > canvas.width - 50) {
+                boss.direction *= -1;
+            }
+
+            // Boss shooting
+            boss.shootTimer++;
+            if (boss.shootTimer > boss.shootInterval) {
+                boss.shootTimer = 0;
+                boss.projectiles.push({
+                    x: boss.x + boss.width / 2,
+                    y: boss.y + boss.height / 2,
+                    velocityX: (player.x - boss.x) / 100,
+                    velocityY: 3,
+                    width: 10,
+                    height: 10
+                });
+            }
+
+            // Update projectiles
+            boss.projectiles = boss.projectiles.filter(proj => {
+                proj.x += proj.velocityX;
+                proj.y += proj.velocityY;
+
+                // Check collision with player
+                if (
+                    proj.x < player.x + player.width &&
+                    proj.x + proj.width > player.x &&
+                    proj.y < player.y + player.height &&
+                    proj.y + proj.height > player.y
+                ) {
+                    loseLife();
+                    return false;
+                }
+
+                return proj.y < canvas.height;
+            });
+        }
+
+        function shootBoss() {
+            if (!boss.isDefeated) {
+                boss.health--;
+                if (boss.health <= 0) {
+                    boss.isDefeated = true;
+                    bossDefeated = true;
+                }
+            }
+        }
+
+        function updatePlayer() {
+            player.x += moveDirection * player.speed;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+            player.onGround = false;
+
+            // Platform collisions
+            levelData.platforms.forEach(platform => {
+                if (
+                    player.velocityY >= 0 &&
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + 20 &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width
+                ) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                    
+                    if (platform.isGoal) levelComplete();
+                }
+            });
+
+            // Coin collection
+            levelData.coins = levelData.coins.filter(coin => {
+                const dist = Math.hypot(player.x + player.width / 2 - coin.x, player.y + player.height / 2 - coin.y);
+                if (dist < 20) {
+                    totalCoins++;
+                    document.getElementById('coinsDisplay').textContent = totalCoins;
+                    return false;
+                }
+                return true;
+            });
+
+            // Enemy collision
+            levelData.enemies.forEach(enemy => {
+                if (
+                    player.x < enemy.x + enemy.width &&
+                    player.x + player.width > enemy.x &&
+                    player.y < enemy.y + enemy.height &&
+                    player.y + player.height > enemy.y
+                ) {
+                    loseLife();
+                }
+            });
+
+            // Spike collision
+            levelData.spikes.forEach(spike => {
+                if (
+                    player.x < spike.x + spike.width &&
+                    player.x + player.width > spike.x &&
+                    player.y < spike.y + spike.height &&
+                    player.y + player.height > spike.y
+                ) {
+                    loseLife();
+                }
+            });
+
+            // Boss collision
+            if (isBossBattle && !boss.isDefeated) {
+                if (
+                    player.x < boss.x + boss.width &&
+                    player.x + player.width > boss.x &&
+                    player.y < boss.y + boss.height &&
+                    player.y + player.height > boss.y
+                ) {
+                    shootBoss();
+                }
+            }
+
+            if (player.y > canvas.height) loseLife();
+        }
+
+        function updateEnemies() {
+            levelData.enemies.forEach(enemy => {
+                enemy.x += enemy.speed * enemy.direction;
+                
+                if (enemy.x < 0 || enemy.x + enemy.width > canvas.width) {
+                    enemy.direction *= -1;
+                }
+            });
+        }
+
+        // Drawing
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Platforms
+            levelData.platforms.forEach(platform => {
+                ctx.fillStyle = platform.isGoal ? '#FFD700' : '#4CAF50';
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                
+                if (platform.isGoal) {
+                    ctx.strokeStyle = '#FFA500';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(platform.x - 2, platform.y - 2, platform.width + 4, platform.height + 4);
+                }
+            });
+
+            // Coins
+            levelData.coins.forEach(coin => {
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#FFA500';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Spikes
+            levelData.spikes.forEach(spike => {
+                ctx.fillStyle = '#FF6B6B';
+                ctx.beginPath();
+                ctx.moveTo(spike.x, spike.y);
+                ctx.lineTo(spike.x + spike.width / 2, spike.y - spike.height);
+                ctx.lineTo(spike.x + spike.width, spike.y);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // Enemies
+            levelData.enemies.forEach(enemy => {
+                ctx.fillStyle = '#E53935';
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(enemy.x + 4, enemy.y + 4, 4, 4);
+                ctx.fillRect(enemy.x + enemy.width - 8, enemy.y + 4, 4, 4);
+                ctx.fillStyle = '#000';
+                ctx.fillRect(enemy.x + 5, enemy.y + 5, 2, 2);
+                ctx.fillRect(enemy.x + enemy.width - 7, enemy.y + 5, 2, 2);
+            });
+
+            // Draw boss
+            if (isBossBattle) {
+                drawBoss();
+
+                // Draw boss projectiles
+                boss.projectiles.forEach(proj => {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, proj.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw boss health bar
+                const healthBarWidth = 200;
+                const healthBarHeight = 20;
+                ctx.fillStyle = '#666';
+                ctx.fillRect(canvas.width / 2 - healthBarWidth / 2, 20, healthBarWidth, healthBarHeight);
+                ctx.fillStyle = boss.health > 0 ? '#00FF00' : '#FF0000';
+                ctx.fillRect(canvas.width / 2 - healthBarWidth / 2, 20, (boss.health / boss.maxHealth) * healthBarWidth, healthBarHeight);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(canvas.width / 2 - healthBarWidth / 2, 20, healthBarWidth, healthBarHeight);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Dr. Kades HP: ${Math.max(0, boss.health)}/${boss.maxHealth}`, canvas.width / 2, 40);
+            }
+
+            drawRobot();
+        }
+
+        function drawBoss() {
+            const x = boss.x;
+            const y = boss.y;
+            const w = boss.width;
+            const h = boss.height;
+
+            // Body
+            ctx.fillStyle = '#8B0000';
+            ctx.fillRect(x, y, w, h);
+
+            // Head
+            ctx.fillStyle = '#A52A2A';
+            ctx.fillRect(x + 10, y - 15, w - 20, 15);
+
+            // Eyes
+            ctx.fillStyle = '#FFFF00';
+            ctx.fillRect(x + 15, y - 10, 6, 6);
+            ctx.fillRect(x + w - 21, y - 10, 6, 6);
+
+            // Mouth (evil grin)
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x + w / 2, y - 3, 8, 0, Math.PI);
+            ctx.stroke();
+
+            // Crown
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(x + 12, y - 18);
+            ctx.lineTo(x + 15, y - 25);
+            ctx.lineTo(x + w / 2, y - 20);
+            ctx.lineTo(x + w - 15, y - 25);
+            ctx.lineTo(x + w - 12, y - 18);
+            ctx.closePath();
+            ctx.fill();
+
+            // Shooting indicator
+            if (boss.shootTimer > boss.shootInterval - 10) {
+                ctx.fillStyle = '#FF6B6B';
+                ctx.beginPath();
+                ctx.arc(x + w / 2, y + h / 2, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (boss.isDefeated) {
+                ctx.globalAlpha = 0.5;
+            }
+        }
+
+        function drawRobot() {
+            const x = player.x;
+            const y = player.y;
+            const w = player.width;
+            const h = player.height;
+
+            const skin = skins.find(s => s.id === selectedSkin);
+            const colors = skin ? skin.colors : skins[0].colors;
+
+            ctx.globalAlpha = 1;
+
+            if (victoryAnimationPlaying) {
+                ctx.save();
+                ctx.translate(x + w / 2, y + h / 2);
+                ctx.rotate(Math.sin(Date.now() / 100) * 0.3);
+                ctx.translate(-(x + w / 2), -(y + h / 2));
+            }
+
+            ctx.fillStyle = colors.body;
+            ctx.fillRect(x + 4, y + 12, w - 8, h - 16);
+
+            ctx.fillStyle = colors.head;
+            ctx.fillRect(x + 6, y, w - 12, 12);
+
+            ctx.fillStyle = colors.eyes;
+            ctx.fillRect(x + 7, y + 2, 4, 4);
+            ctx.fillRect(x + w - 11, y + 2, 4, 4);
+
+            ctx.strokeStyle = colors.head;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x + w / 2, y);
+            ctx.lineTo(x + w / 2, y - 8);
+            ctx.stroke();
+
+            if (!player.isDucking) {
+                ctx.fillStyle = colors.body;
+                ctx.fillRect(x + 6, y + h - 4, 4, 4);
+                ctx.fillRect(x + w - 10, y + h - 4, 4, 4);
+            }
+
+            if (victoryAnimationPlaying) {
+                ctx.restore();
+            }
+        }
+
+        // Game logic
+        function loseLife() {
+            lives--;
+            document.getElementById('livesDisplay').textContent = lives;
+            
+            if (lives <= 0) {
+                endGame(false);
+            } else {
+                initLevel(currentLevel);
+            }
+        }
+
+        function levelComplete() {
+            if (currentLevel === 20) {
+                currentLevel++;
+                initLevel(currentLevel);
+            } else if (currentLevel === 21 && bossDefeated) {
+                endGame(true);
+            } else {
+                currentLevel++;
+                initLevel(currentLevel);
+            }
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            saveLocalStorage();
+            
+            const screen = document.getElementById('gameOver');
+            const title = document.getElementById('gameOverTitle');
+            const msg = document.getElementById('gameOverMessage');
+
+            if (won) {
+                title.textContent = '🎉 YOU WIN! 🎉';
+                msg.innerHTML = `${robotName} is FREE!<br><br>Dr. Kades has been defeated!<br>You collected <strong>${totalCoins} coins</strong>!<br>Thank you for saving me!`;
+            } else {
+                title.textContent = '💔 Game Over';
+                msg.innerHTML = `${robotName} couldn't escape...<br><br>Reached level <strong>${currentLevel}</strong>/21<br>Coins collected: <strong>${totalCoins}</strong>`;
+            }
+
+            screen.style.display = 'flex';
+        }
+
+        function initLevel(levelNum) {
+            levelData = generateLevel(levelNum);
+            player.x = 50;
+            player.y = canvas.height - 100;
+            player.velocityY = 0;
+            player.isJumping = false;
+            player.isDucking = false;
+            moveDirection = 0;
+            victoryAnimationPlaying = false;
+            bossDefeated = false;
+
+            document.getElementById('levelDisplay').textContent = levelNum;
+
+            if (levelNum === 21) {
+                initBoss();
+            }
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                updatePlayer();
+                updateEnemies();
+                
+                if (isBossBattle) {
+                    updateBoss();
+                    
+                    if (boss.isDefeated && !victoryAnimationPlaying) {
+                        victoryAnimationPlaying = true;
+                        document.getElementById('victoryText').style.display = 'block';
+                        
+                        // Shoot boss off screen
+                        let bossY = boss.y;
+                        let shootInterval = setInterval(() => {
+                            bossY -= 15;
+                            boss.y = bossY;
+                            if (bossY < -100) {
+                                clearInterval(shootInterval);
+                                document.getElementById('victoryText').style.display = 'none';
+                                setTimeout(() => endGame(true), 1000);
+                            }
+                        }, 30);
+                    }
+                }
+                
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startStory() {
+            const input = document.getElementById('nameInput').value.trim();
+            if (!input) {
+                alert('Please enter a name!');
+                return;
+            }
+
+            robotName = input;
+            document.getElementById('robotName').textContent = `I'm ${robotName}!`;
+            document.getElementById('robotNameText').textContent = robotName;
+            
+            document.getElementById('namePrompt').style.display = 'none';
+            document.getElementById('storyScreen').style.display = 'flex';
+        }
+
+        function startGame() {
+            document.getElementById('storyScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'flex';
+            
+            getLocalStorage();
+            document.getElementById('coinsDisplay').textContent = totalCoins;
+            resizeCanvas();
+            gameRunning = true;
+            initLevel(1);
+            gameLoop();
+        }
+
+        window.addEventListener('resize', () => {
+            if (gameRunning) resizeCanvas();
+        });
+
+        window.addEventListener('load', () => {
+            document.getElementById('nameInput').focus();
+        });
+    </script>
+</body>
+</html>
